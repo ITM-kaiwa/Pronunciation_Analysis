@@ -59,13 +59,7 @@
     </divdiv>
 
     <canvas id="canvas" width="550" height="200"></canvas>
-    
-    <div class="legend">
-        <div><span class="color-box" style="background: #ff3366;"></span>音が上昇中</div>
-        <div><span class="color-box" style="background: #00ffcc;"></span>安定</div>
-        <div><span class="color-box" style="background: #3399ff;"></span>音が下降中</div>
-    </div>
-    
+            
     <h3>🤖 AIの分析フィードバック (Kết quả phân tích):</h3>
     <div id="result">ここにGeminiからのアドバイスが表示されます。</div>
 
@@ -255,23 +249,41 @@
     }
 
     function drawLine(pitch) {
-        if (xIdx >= canvas.width) { xIdx = 0; canvasCtx.fillStyle = '#111'; canvasCtx.fillRect(0, 0, canvas.width, canvas.height); lastY = null; }
+        // 画面端まで行ったらクリアして左に戻る
+        if (xIdx >= canvas.width) { 
+            xIdx = 0; 
+            canvasCtx.fillStyle = '#111'; 
+            canvasCtx.fillRect(0, 0, canvas.width, canvas.height); 
+            lastY = null; 
+        }
+
         if (pitch !== -1) {
+            // ピッチをキャンバスのY座標に変換
             const y = canvas.height - ((pitch - 80) / (500 - 80) * canvas.height);
-            if (lastY !== null) {
-                const diff = lastY - y;
-                if (diff > 4) canvasCtx.strokeStyle = '#ff3366';
-                else if (diff < -4) canvasCtx.strokeStyle = '#3399ff';
-                else canvasCtx.strokeStyle = '#00ffcc';
-                canvasCtx.lineWidth = 4; canvasCtx.lineCap = 'round';
-                canvasCtx.beginPath(); canvasCtx.moveTo(xIdx - 3, lastY); canvasCtx.lineTo(xIdx, y); canvasCtx.stroke();
+            
+            if (lastY === null) {
+                // 音声の始まり：新しい線のスタート地点を打つ
+                canvasCtx.beginPath();
+                canvasCtx.moveTo(xIdx, y);
+            } else {
+                // 音声が続いている：前の点から現在の点まで線を引く
+                canvasCtx.lineTo(xIdx, y);
+                canvasCtx.strokeStyle = '#00ffcc'; // 単一の色に固定
+                canvasCtx.lineWidth = 4;
+                canvasCtx.lineCap = 'round';
+                canvasCtx.lineJoin = 'round'; // 角を滑らかに繋ぐ
+                canvasCtx.stroke();
+                
+                // 次の描画のために、現在の位置を新しいスタート地点にする
+                canvasCtx.beginPath();
+                canvasCtx.moveTo(xIdx, y);
             }
             lastY = y;
         } else {
-            // 【追加】無音時にも動いていることがわかるように、中央にグレーの点線を描画
+            // 無音時：中央にグレーの点線を描画し、線を切る
             canvasCtx.fillStyle = '#444';
             canvasCtx.fillRect(xIdx, canvas.height / 2, 2, 2);
-            lastY = null; 
+            lastY = null; // ここでnullにすることで、次の音声入力時に線が新しく始まる
         }
         xIdx += 3;
     }

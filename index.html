@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>発音分析アドバイザー - 試用版v3</title>
+    <title>発音分析アドバイザー - 最新安定版v2</title>
     <style>
         body { font-family: sans-serif; text-align: center; margin-top: 20px; background: #f0f2f5; color: #333; }
         .container { background: white; padding: 20px; border-radius: 10px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 90%; max-width: 600px; text-align: left; }
@@ -22,6 +22,20 @@
         .legend { display: flex; justify-content: center; gap: 15px; font-size: 14px; margin-top: 10px; }
         .color-box { display: inline-block; width: 12px; height: 12px; border-radius: 2px; margin-right: 5px; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .ojad-link-btn {
+            display: inline-block;
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        .ojad-link-btn:hover {
+            background-color: #5a6268;
+        }
     </style>
 </head>
 <body>
@@ -51,6 +65,10 @@
     
     <h3>🤖 AIの分析フィードバック (Kết quả phân tích):</h3>
     <div id="result">ここにGeminiからのアドバイスが表示されます。</div>
+<br>
+<br>
+        <a href="https://www.gavo.t.u-tokyo.ac.jp/ojad/vie/phrasing/index" target="_blank" class="ojad-link-btn">📖 OJADでアクセントの見本を確認する</a>
+
 </div>
 
 <script>
@@ -75,7 +93,7 @@
     let lastY = null; 
     let pitchHistory = [];
     const SMOOTH_WINDOW = 5;
-    
+   
     recordBtn.addEventListener('click', async () => {
         try {
             if (!audioContext) {

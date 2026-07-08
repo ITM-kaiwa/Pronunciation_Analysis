@@ -3,18 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>発音分析アドバイザー - 安定版v3.1</title>
+    <title>発音分析アドバイザー - 安定版v4</title>
     <style>
         body { font-family: sans-serif; text-align: center; margin-top: 20px; background: #f0f2f5; color: #333; }
         .container { background: white; padding: 20px; border-radius: 10px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 90%; max-width: 600px; text-align: left; }
         h2 { text-align: center; margin-top: 0; }
         .center { text-align: center; }
-        button { font-size: 16px; padding: 10px 20px; margin: 10px 5px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        
+        /* 1. ベースのボタンに滑らかな動き（transition）と立体感（box-shadow）を追加 */
+        button { 
+            font-size: 16px; 
+            padding: 10px 20px; 
+            margin: 10px 5px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            transition: all 0.2s ease; /* 色や動きの変化を0.2秒かけて滑らかにする */
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2); /* 下方向に影をつけて立体感を出す */
+        }
+        
         #recordBtn { background-color: #007bff; color: white; }
         #recordBtn.recording { background-color: #333; }
         #analyzeBtn { background-color: #28a745; color: white; }
-        #analyzeBtn:disabled { background-color: #ccc; cursor: not-allowed; }
-        #canvas { background: #111; border-radius: 5px; display: block; margin: 15px auto; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+        
+        /* 2. マウスが乗った時（ホバー時）に色を少し濃くする */
+        #recordBtn:hover:not(:disabled) {
+            background-color: #0056b3; /* 元の青より少し濃い青 */
+        }
+        #analyzeBtn:hover:not(:disabled) {
+            background-color: #218838; /* 元の緑より少し濃い緑 */
+        }
+        
+        /* 3. クリックした時（アクティブ時）にボタンが沈む効果 */
+        button:active:not(:disabled) {
+            transform: translateY(4px); /* 影の高さ(4px)と同じ分だけ下に移動させる */
+            box-shadow: 0 0 0 rgba(0,0,0,0); /* 影を消すことで、地面に付いた（沈んだ）ように見せる */
+        }
+        
+        /* 4. 非アクティブ（disabled）の時は影を消し、ホバーやクリックが反応しないようにする */
+        #analyzeBtn:disabled { 
+            background-color: #ccc; 
+            cursor: not-allowed; 
+            box-shadow: none; /* 立体感をなくす */
+            transform: none;  /* 沈まないようにする */
+        }
+        
+        /* 5. キャンバスを囲むコンテナ：ここで横スクロールを許可します */
+        #canvasContainer { 
+            width: 100%; 
+            max-width: 550px; 
+            overflow-x: auto; /* 横幅を超えたらスクロールバーを出す */
+            margin: 15px auto; 
+            border-radius: 5px; 
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+            background: #111;
+        }
+        /* キャンバス自体のデザイン */
+        #canvas { 
+            display: block; 
+            background: #111; 
+        }
+        
         .key-input-box { background: #fff3cd; padding: 15px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #ffeeba; }
         #apiKey { width: 80%; padding: 8px; font-size: 14px; margin-top: 5px; }
         #result { background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 5px solid #28a745; margin-top: 20px; white-space: pre-wrap; min-height: 50px; font-size: 15px; line-height: 1.6; }
@@ -22,6 +72,7 @@
         .legend { display: flex; justify-content: center; gap: 15px; font-size: 14px; margin-top: 10px; }
         .color-box { display: inline-block; width: 12px; height: 12px; border-radius: 2px; margin-right: 5px; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        
         .ojad-link-btn {
             display: inline-block;
             background-color: #6c757d;
@@ -32,46 +83,16 @@
             font-weight: bold;
             margin-top: 10px;
             font-size: 14px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
         }
         .ojad-link-btn:hover {
             background-color: #5a6268;
         }
-        /* 1. ベースのボタンに滑らかな動き（transition）と立体感（box-shadow）を追加します */
-    button {
-    font-size: 16px;
-    padding: 10px 20px;
-    margin: 10px 5px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: bold;
-    /* --- ここから追加 --- */
-    transition: all 0.2s ease; /* 色や動きの変化を0.2秒かけて滑らかにする */
-    box-shadow: 0 4px 0 rgba(0,0,0,0.2); /* 下方向に影をつけて立体感を出す */
-    }
-
-        /* 2. マウスが乗った時（ホバー時）に色を少し濃くする */
-        #recordBtn:hover:not(:disabled) {
-        background-color: #0056b3; /* 元の青より少し濃い青 */
-    }
-        #analyzeBtn:hover:not(:disabled) {
-        background-color: #218838; /* 元の緑より少し濃い緑 */
-    }
-    /* ※ OJADのリンクボタン（.ojad-link-btn）は既にhoverが設定されているのでそのままでOKです */
-
-    /* 3. クリックした時（アクティブ時）にボタンが沈む効果 */
-    button:active:not(:disabled) {
-    transform: translateY(4px); /* 影の高さ(4px)と同じ分だけ下に移動させる */
-    box-shadow: 0 0 0 rgba(0,0,0,0); /* 影を消すことで、地面に付いた（沈んだ）ように見せる */
-    }
-
-    /* 4. 非アクティブ（disabled）の時は影を消し、ホバーやクリックが反応しないようにする */
-    #analyzeBtn:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-    box-shadow: none; /* 立体感をなくす */
-    transform: none;  /* 沈まないようにする */
-    }
+        .ojad-link-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 rgba(0,0,0,0);
+        }
     </style>
 </head>
 <body>
@@ -94,7 +115,9 @@
         <a href="https://www.gavo.t.u-tokyo.ac.jp/ojad/vie/phrasing/index" target="_blank" class="ojad-link-btn">📖 OJADでアクセントの見本を確認する</a>
     </div>
 
-    <canvas id="canvas" width="550" height="200"></canvas>
+    <div id="canvasContainer">
+        <canvas id="canvas" width="550" height="200"></canvas>
+    </div>
             
     <h3>🤖 AIの分析フィードバック (Kết quả phân tích):</h3>
     <div id="result">ここにGeminiからのアドバイスが表示されます。</div>
@@ -106,6 +129,7 @@
     const analyzeBtn = document.getElementById('analyzeBtn');
     const canvas = document.getElementById('canvas');
     const canvasCtx = canvas.getContext('2d');
+    const canvasContainer = document.getElementById('canvasContainer'); // コンテナを取得
     const resultDiv = document.getElementById('result');
     const apiKeyInput = document.getElementById('apiKey');
 
@@ -178,6 +202,8 @@
             microphone = audioContext.createMediaStreamSource(stream);
             microphone.connect(analyser);
 
+            // 録音開始時にキャンバスの幅を初期値(550px)にリセット
+            canvas.width = 550;
             canvasCtx.fillStyle = '#111';
             canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
             xIdx = 0;
@@ -285,12 +311,24 @@
     }
 
     function drawLine(pitch) {
-        // 画面端まで行ったらクリアして左に戻る
-        if (xIdx >= canvas.width) { 
-            xIdx = 0; 
-            canvasCtx.fillStyle = '#111'; 
-            canvasCtx.fillRect(0, 0, canvas.width, canvas.height); 
-            lastY = null; 
+        // 右端に近づいたら、キャンバスの幅を右に広げる
+        if (xIdx >= canvas.width - 10) { 
+            // 1. 今描かれているグラフを一時的なキャンバスにコピーして退避
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(canvas, 0, 0);
+
+            // 2. キャンバスの幅を右に500px広げる
+            canvas.width += 500;
+
+            // 3. 広がったキャンバス全体を背景色で塗りつぶす
+            canvasCtx.fillStyle = '#111';
+            canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 4. 退避しておいたグラフを元通りに貼り付ける
+            canvasCtx.drawImage(tempCanvas, 0, 0);
         }
 
         if (pitch !== -1) {
@@ -322,6 +360,9 @@
             lastY = null; // ここでnullにすることで、次の音声入力時に線が新しく始まる
         }
         xIdx += 3;
+
+        // 描画が進むのに合わせて、自動的に右へスクロールさせる
+        canvasContainer.scrollLeft = canvasContainer.scrollWidth;
     }
 </script>
 

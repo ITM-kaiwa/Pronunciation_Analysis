@@ -75,13 +75,7 @@
     let lastY = null; 
     let pitchHistory = [];
     const SMOOTH_WINDOW = 5;
-
-
-    const apiKeyInput = document.getElementById('apiKey');
-
-    let audioContext;
-    // ...以下略
-
+    
     recordBtn.addEventListener('click', async () => {
         try {
             if (!audioContext) {

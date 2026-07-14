@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>発音分析アドバイザー - 安定版v4.2c (UI洗練版)</title>
+    <title>発音分析アドバイザー - 安定版v4.3b</title>
     <style>
         body { font-family: sans-serif; text-align: center; margin-top: 20px; background: #f0f2f5; color: #333; }
         .container { background: white; padding: 20px; border-radius: 10px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 90%; max-width: 600px; text-align: left; }
@@ -110,17 +110,15 @@
 </head>
 <body>
 <div class="container">
-    <h2>🗣️ AI発音分析アドバイザー（お試し版）Ver4.2g</h2>
+    <h2>🗣️ AI発音分析アドバイザー（お試し版）</h2>
     
     <div class="key-input-box">
         <label for="apiKey">🔑 <strong>手順1: Gemini APIキーを入力してください</strong></label><br>
         <input type="password" id="apiKey" placeholder="AIzaSy... から始まるキーをもらって、ここに貼り付け">
     </div>
 
-    <!-- IDを付与して操作できるようにしました -->
     <p class="center" id="step2Text"><strong>手順2: ボタンを押して、日本語を話してください。</strong></p>
     
-    <!-- IDを付与して操作できるようにしました -->
     <div class="btn-container" id="btnContainer">
         <button id="recordBtn">🔵 録音＆可視化 スタート</button>
         <button id="analyzeBtn" disabled>🤖 Geminiで発音を分析</button>
@@ -134,7 +132,8 @@
         <canvas id="canvas" width="550" height="200"></canvas>
     </div>
     
-    <h3>🤖 AIの分析フィードバック (Kết quả phân tích):</h3>
+    <!-- ★修正：スクロールのターゲットになるようにIDを付与 -->
+    <h3 id="resultHeading">🤖 AIの分析フィードバック (Kết quả phân tích):</h3>
     <div id="result">ここにGeminiからのアドバイスが表示されます。</div>
 
 </div>
@@ -148,7 +147,6 @@
     const resultDiv = document.getElementById('result');
     const apiKeyInput = document.getElementById('apiKey');
     
-    // UI非表示操作用に追加
     const btnContainer = document.getElementById('btnContainer');
     const step2Text = document.getElementById('step2Text');
     const ojadLinkContainer = document.getElementById('ojadLinkContainer');
@@ -192,7 +190,6 @@
             alert("🔑 APIキーが入力されていません。\nキーを入力してから「Geminiで発音を分析」ボタンを押してください。");
             analyzeBtn.disabled = false;
             
-            // 初回（キー未入力）で弾かれた場合、隠していたUIをすべて復活させる
             btnContainer.classList.remove('hidden');
             canvasContainer.classList.remove('hidden');
             ojadLinkContainer.classList.remove('hidden');
@@ -248,12 +245,21 @@
             analyzeBtn.disabled = false;
             recordBtn.disabled = false;
             
-            // ★処理完了後に、隠していたUI（ボタン・キャンバス・リンク・テキスト）をすべて再表示する
+            // 処理完了後にUIを再表示
             btnContainer.classList.remove('hidden');
             canvasContainer.classList.remove('hidden');
             ojadLinkContainer.classList.remove('hidden');
             recordBtn.classList.remove('hidden');
             step2Text.classList.remove('hidden');
+
+            // ★追加：アドバイス部分（見出し）へ自動スクロールする処理
+            // UIが表示されてレイアウトが確定するのを少し（0.1秒）待ってからスクロールさせます
+            setTimeout(() => {
+                const heading = document.getElementById('resultHeading');
+                if (heading) {
+                    heading.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 100);
         }
     }
 
@@ -265,12 +271,11 @@
         const audioDataBase64 = sessionStorage.getItem('analysisAudioData');
 
         if (targetText && audioDataBase64) {
-            // ★外部データがある場合、解析完了までUIを非表示にする
-            recordBtn.classList.add('hidden'); // 録音ボタンを一時的に隠す
-            step2Text.classList.add('hidden'); // 手順2のテキストを一時的に隠す
-            btnContainer.classList.add('hidden'); // ボタンコンテナ全体を一時的に隠す
-            canvasContainer.classList.add('hidden'); // キャンバスを一時的に隠す
-            ojadLinkContainer.classList.add('hidden'); // リンクボタンを一時的に隠す
+            recordBtn.classList.add('hidden'); 
+            step2Text.classList.add('hidden'); 
+            btnContainer.classList.add('hidden'); 
+            canvasContainer.classList.add('hidden'); 
+            ojadLinkContainer.classList.add('hidden'); 
             
             const base64Data = audioDataBase64.includes(',') ? audioDataBase64.split(',')[1] : audioDataBase64;
 
@@ -280,7 +285,6 @@
             };
             analyzeBtn.disabled = false;
 
-            // 自動で解析処理を開始
             runAnalysis(base64Data, targetText);
 
             sessionStorage.removeItem('analysisTargetText');

@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>発音分析アドバイザー - 安定版v4.2f</title>
+    <title>発音分析アドバイザー - 安定版v4.2c (UI洗練版)</title>
     <style>
         body { font-family: sans-serif; text-align: center; margin-top: 20px; background: #f0f2f5; color: #333; }
         .container { background: white; padding: 20px; border-radius: 10px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 90%; max-width: 600px; text-align: left; }
         h2 { text-align: center; margin-top: 0; }
         .center { text-align: center; }
         
-        /* 1. ベースのボタンに滑らかな動き（transition）と立体感（box-shadow）を追加 */
         button { 
             font-size: 16px; 
             padding: 12px 20px; 
@@ -18,26 +17,23 @@
             border-radius: 8px; 
             cursor: pointer; 
             font-weight: bold; 
-            transition: all 0.2s ease; /* 色や動きの変化を0.2秒かけて滑らかにする */
-            box-shadow: 0 4px 0 rgba(0,0,0,0.2); /* 下方向に影をつけて立体感を出す */
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
         }
         
-        /* ★追加：ボタンを縦に並べるためのコンテナスタイル */
         .btn-container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 15px; /* ボタンの縦のすき間 */
+            gap: 15px; 
             margin: 15px 0;
         }
-        /* 縦並びの時はボタンの横幅を揃えるときれいに見えます */
         .btn-container button {
             width: 100%;
             max-width: 320px;
             margin: 0; 
         }
 
-        /* ★追加：ボタンを隠すためのスタイル */
         .hidden {
             display: none !important;
         }
@@ -46,39 +42,34 @@
         #recordBtn.recording { background-color: #333; }
         #analyzeBtn { background-color: #28a745; color: white; }
         
-        /* 2. マウスが乗った時（ホバー時）に色を少し濃くする */
         #recordBtn:hover:not(:disabled) {
-            background-color: #0056b3; /* 元の青より少し濃い青 */
+            background-color: #0056b3; 
         }
         #analyzeBtn:hover:not(:disabled) {
-            background-color: #218838; /* 元の緑より少し濃い緑 */
+            background-color: #218838; 
         }
         
-        /* 3. クリックした時（アクティブ時）にボタンが沈む効果 */
         button:active:not(:disabled) {
-            transform: translateY(4px); /* 影の高さ(4px)と同じ分だけ下に移動させる */
-            box-shadow: 0 0 0 rgba(0,0,0,0); /* 影を消すことで、地面に付いた（沈んだ）ように見せる */
+            transform: translateY(4px); 
+            box-shadow: 0 0 0 rgba(0,0,0,0); 
         }
         
-        /* 4. 非アクティブ（disabled）の時は影を消し、ホバーやクリックが反応しないようにする */
         #analyzeBtn:disabled { 
             background-color: #ccc; 
             cursor: not-allowed; 
-            box-shadow: none; /* 立体感をなくす */
-            transform: none;  /* 沈まないようにする */
+            box-shadow: none; 
+            transform: none;  
         }
         
-        /* 5. キャンバスを囲むコンテナ：ここで横スクロールを許可します */
         #canvasContainer { 
             width: 100%; 
             max-width: 550px; 
-            overflow-x: auto; /* 横幅を超えたらスクロールバーを出す */
+            overflow-x: auto; 
             margin: 15px auto; 
             border-radius: 5px; 
             box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
             background: #111;
         }
-        /* キャンバス自体のデザイン */
         #canvas { 
             display: block; 
             background: #111; 
@@ -119,22 +110,23 @@
 </head>
 <body>
 <div class="container">
-    <h2>🗣️ AI発音分析アドバイザー（お試し版）Ver4.2f</h2>
+    <h2>🗣️ AI発音分析アドバイザー（お試し版）Ver4.2g</h2>
     
     <div class="key-input-box">
         <label for="apiKey">🔑 <strong>手順1: Gemini APIキーを入力してください</strong></label><br>
         <input type="password" id="apiKey" placeholder="AIzaSy... から始まるキーをもらって、ここに貼り付け">
     </div>
 
-    <p class="center"><strong>手順2: ボタンを押して、日本語を話してください。</strong></p>
+    <!-- IDを付与して操作できるようにしました -->
+    <p class="center" id="step2Text"><strong>手順2: ボタンを押して、日本語を話してください。</strong></p>
     
-    <!-- ★修正：ボタンを縦に並べるためのクラスに変更 -->
-    <div class="btn-container">
+    <!-- IDを付与して操作できるようにしました -->
+    <div class="btn-container" id="btnContainer">
         <button id="recordBtn">🔵 録音＆可視化 スタート</button>
         <button id="analyzeBtn" disabled>🤖 Geminiで発音を分析</button>
     </div>
     
-    <div class="center">
+    <div class="center" id="ojadLinkContainer">
         <a href="https://www.gavo.t.u-tokyo.ac.jp/ojad/vie/phrasing/index" target="_blank" class="ojad-link-btn">📖 OJADでアクセント見本を確認する</a>
     </div>
 
@@ -155,6 +147,11 @@
     const canvasContainer = document.getElementById('canvasContainer');
     const resultDiv = document.getElementById('result');
     const apiKeyInput = document.getElementById('apiKey');
+    
+    // UI非表示操作用に追加
+    const btnContainer = document.getElementById('btnContainer');
+    const step2Text = document.getElementById('step2Text');
+    const ojadLinkContainer = document.getElementById('ojadLinkContainer');
 
     let audioContext;
     let analyser;
@@ -171,7 +168,6 @@
     let pitchHistory = [];
     const SMOOTH_WINDOW = 5;
 
-    // ★修正箇所：外部から渡されたデータを永続的に保持する変数
     window.externalAudioData = null;
 
     // ==========================================
@@ -194,12 +190,19 @@
         
         if (!apiKey) {
             alert("🔑 APIキーが入力されていません。\nキーを入力してから「Geminiで発音を分析」ボタンを押してください。");
-            analyzeBtn.disabled = false; // ボタンは有効なまま維持する
+            analyzeBtn.disabled = false;
+            
+            // 初回（キー未入力）で弾かれた場合、隠していたUIをすべて復活させる
+            btnContainer.classList.remove('hidden');
+            canvasContainer.classList.remove('hidden');
+            ojadLinkContainer.classList.remove('hidden');
+            recordBtn.classList.remove('hidden');
+            step2Text.classList.remove('hidden');
             return;
         }
 
-        resultDiv.innerHTML = '<span class="loading">⏳ Gemini đang lắng nghe và phân tích giọng nói của bạn... (AIが音声を解析中です...)</span>';
-        analyzeBtn.disabled = true; // 処理中は連打防止で無効化
+        resultDiv.innerHTML = '<span class="loading">⏳ Gemini đang lắng nghe và phân tích giọng nói của bạn...<br>(AIが音声を解析中です。数秒お待ちください...)</span>';
+        analyzeBtn.disabled = true; 
         recordBtn.disabled = true;
 
         let promptText = "あなたは日本語音声指導コンサルタントです。添付されたユーザーの録音音声を直接聴き、日本語の高低アクセント（ピッチアクセント）やリズム、イントネーションの美しさを分析してください。\n";
@@ -242,12 +245,15 @@
             alert("通信エラーが発生しました:\n" + innerErr.message);
             resultDiv.textContent = "通信エラーが発生しました。インターネット接続を確認してください。";
         } finally {
-            // ★処理完了後は必ず分析ボタンを有効化する
             analyzeBtn.disabled = false;
-            // 録音ボタンが非表示になっていない場合のみ有効化する
-            if (!recordBtn.classList.contains('hidden')) {
-                recordBtn.disabled = false;
-            }
+            recordBtn.disabled = false;
+            
+            // ★処理完了後に、隠していたUI（ボタン・キャンバス・リンク・テキスト）をすべて再表示する
+            btnContainer.classList.remove('hidden');
+            canvasContainer.classList.remove('hidden');
+            ojadLinkContainer.classList.remove('hidden');
+            recordBtn.classList.remove('hidden');
+            step2Text.classList.remove('hidden');
         }
     }
 
@@ -259,31 +265,26 @@
         const audioDataBase64 = sessionStorage.getItem('analysisAudioData');
 
         if (targetText && audioDataBase64) {
-            console.log("別アプリからデータを受け取りました。解析対象:", targetText);
-            
-            // データを受け取った場合は録音ボタンを非表示にする
-            recordBtn.classList.add('hidden');
+            // ★外部データがある場合、解析完了までUIを非表示にする
+            recordBtn.classList.add('hidden'); // 録音ボタンを一時的に隠す
+            step2Text.classList.add('hidden'); // 手順2のテキストを一時的に隠す
+            btnContainer.classList.add('hidden'); // ボタンコンテナ全体を一時的に隠す
+            canvasContainer.classList.add('hidden'); // キャンバスを一時的に隠す
+            ojadLinkContainer.classList.add('hidden'); // リンクボタンを一時的に隠す
             
             const base64Data = audioDataBase64.includes(',') ? audioDataBase64.split(',')[1] : audioDataBase64;
 
-            // ★修正箇所：データをグローバル変数に保存（何度でも分析ボタンを押せるように）
             window.externalAudioData = {
                 base64Audio: base64Data,
                 targetText: targetText
             };
-
-            // ★修正箇所：強制的に分析ボタンを有効化しておく
             analyzeBtn.disabled = false;
 
             // 自動で解析処理を開始
             runAnalysis(base64Data, targetText);
 
-            // リロード時に何度も実行されないようにストレージをクリア
             sessionStorage.removeItem('analysisTargetText');
             sessionStorage.removeItem('analysisAudioData');
-        } else {
-            console.log("外部からの録音データはありません。待機します。");
-            // データがない場合は録音ボタンは表示されたままになる
         }
     });
 
@@ -291,13 +292,11 @@
     // 4. 分析ボタンの手動クリック処理
     // ==========================================
     analyzeBtn.addEventListener('click', async () => {
-        // ★修正箇所：外部データが存在する場合は、何度でもそれを使う（データをnullで消去しない）
         if (window.externalAudioData) {
             runAnalysis(window.externalAudioData.base64Audio, window.externalAudioData.targetText);
             return;
         }
 
-        // このページで手動録音した場合の処理
         if (!audioBlob) {
             alert("録音データがありません。先に録音を行ってください。");
             return;

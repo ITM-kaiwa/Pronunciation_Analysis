@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>発音分析アドバイザー - 安定版v4.1e</title>
+    <title>発音分析アドバイザー - 安定版v4.2a</title>
     <style>
         body { font-family: sans-serif; text-align: center; margin-top: 20px; background: #f0f2f5; color: #333; }
         .container { background: white; padding: 20px; border-radius: 10px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 90%; max-width: 600px; text-align: left; }
@@ -97,24 +96,25 @@
     </style>
 </head>
 <body>
-
 <div class="container">
     <h2>🗣️ AI発音分析アドバイザー（お試し版）</h2>
     
     <div class="key-input-box">
         <label for="apiKey">🔑 <strong>手順1: Gemini APIキーを入力してください</strong></label><br>
         <input type="password" id="apiKey" placeholder="AIzaSy... から始まるキーをもらって、ここに貼り付け">
-            </div>
+    </div>
 
     <p><strong>手順2: ボタンを押して、日本語を話してください。</strong></p>
     <div>
-        例文：　<ruby>雨<rt>あめ</rt></ruby>が<ruby>降<rt>ふ</rt></ruby>っていましたが、<ruby>姉<rt>あね</rt></ruby>が<ruby>飴<rt>あめ</rt></ruby>を
-                <ruby>買<rt>か</rt></ruby>ってきてくれました。<ruby>姉<rt>あね</rt></ruby>が<ruby>買<rt>か</rt></ruby>ってくれた<ruby>飴<rt>あめ</rt></ruby>はおいしかったです。
+        例文： <ruby>雨<rt>あめ</rt></ruby>が<ruby>降<rt>ふ</rt></ruby>っていましたが、<ruby>姉<rt>あね</rt></ruby>が<ruby>飴<rt>あめ</rt></ruby>を
+        <ruby>買<rt>か</rt></ruby>ってきてくれました。<ruby>姉<rt>あね</rt></ruby>が<ruby>買<rt>か</rt></ruby>ってくれた<ruby>飴<rt>あめ</rt></ruby>はおいしかったです。
     </div>
+    
     <div class="center">
         <button id="recordBtn">🔵 録音＆可視化 スタート</button>
         <button id="analyzeBtn" disabled>🤖 Geminiで発音を分析</button>
     </div>
+    
     <div class="center">
         <a href="https://www.gavo.t.u-tokyo.ac.jp/ojad/vie/phrasing/index" target="_blank" class="ojad-link-btn">📖 OJADでアクセントの見本を確認する</a>
     </div>
@@ -122,7 +122,7 @@
     <div id="canvasContainer">
         <canvas id="canvas" width="550" height="200"></canvas>
     </div>
-            
+    
     <h3>🤖 AIの分析フィードバック (Kết quả phân tích):</h3>
     <div id="result">ここにGeminiからのアドバイスが表示されます。</div>
 
@@ -133,7 +133,7 @@
     const analyzeBtn = document.getElementById('analyzeBtn');
     const canvas = document.getElementById('canvas');
     const canvasCtx = canvas.getContext('2d');
-    const canvasContainer = document.getElementById('canvasContainer'); // コンテナを取得
+    const canvasContainer = document.getElementById('canvasContainer');
     const resultDiv = document.getElementById('result');
     const apiKeyInput = document.getElementById('apiKey');
 
@@ -145,13 +145,40 @@
     let audioBlob;
     let isRecording = false;
     let animationFrameId;
-    let activeStream = null; // マイク電源管理用
+    let activeStream = null;
 
     let xIdx = 0;
     let lastY = null; 
     let pitchHistory = [];
     const SMOOTH_WINDOW = 5;
-   
+
+    // ==========================================
+    // 追加したコード: sessionStorageからのデータ受け取り
+    // ==========================================
+    window.addEventListener('DOMContentLoaded', () => {
+        // sessionStorageからデータを取り出す
+        const targetText = sessionStorage.getItem('analysisTargetText');
+        const audioDataBase64 = sessionStorage.getItem('analysisAudioData');
+
+        if (targetText && audioDataBase64) {
+            console.log("解析対象のテキスト:", targetText);
+            
+            // Base64の音声データをAudio要素に入れて再生テストする例
+            // const audioElement = new Audio(audioDataBase64);
+            // audioElement.controls = true;
+            // document.body.appendChild(audioElement);
+
+            // ※ここでSpeech to Text APIや、発音評価APIにデータを渡す処理を記述します。
+            
+            // 使い終わったらストレージから消去（任意）
+            // sessionStorage.removeItem('analysisTargetText');
+            // sessionStorage.removeItem('analysisAudioData');
+        } else {
+            console.log("録音データが渡されていません。");
+        }
+    });
+    // ==========================================
+
     recordBtn.addEventListener('click', async () => {
         try {
             if (!audioContext) {
@@ -172,7 +199,8 @@
                 if (animationFrameId) {
                     cancelAnimationFrame(animationFrameId);
                 }
-                // 【追加】マイクの電源を確実に切り、赤いマークを消す
+                
+                // マイクの電源を確実に切り、赤いマークを消す
                 if (activeStream) {
                     activeStream.getTracks().forEach(track => track.stop());
                     activeStream = null;
@@ -217,7 +245,7 @@
             function updateVisuals() {
                 if (!isRecording) return;
                 const array = new Float32Array(analyser.fftSize);
-                analyser.getFloatTimeDomainData(array); 
+                analyser.getFloatTimeDomainData(array);
                 
                 let pitch = autoCorrelate(array, audioContext.sampleRate);
                 
@@ -229,6 +257,7 @@
                     pitchHistory = [];
                     pitch = -1;
                 }
+                
                 drawLine(pitch);
                 animationFrameId = requestAnimationFrame(updateVisuals);
             }
@@ -258,8 +287,8 @@
                     const requestBody = {
                         contents: [{
                             parts: [
-                                { text: "あなたはプロの日本語音声指導コンサルタントです。添付されたユーザーの録音音声を直接聴き、日本語の高低アクセント（ピッチアクセント）やリズム、イントネーションの美しさを分析してください。何という言葉を発音しようとしたかを察した上で、以下のフォーマットに厳密に従って出力してください。\n\n" + 
-                                       "【重要ルール】\n" +
+                                { text: "あなたはプロの日本語音声指導コンサルタントです。添付されたユーザーの録音音声を直接聴き、日本語の高低アクセント（ピッチアクセント）やリズム、イントネーションの美しさを分析してください。何という言葉を発音しようとしたかを察した上で、以下のフォーマットに厳密に従って出力してください。\n\n" +
+                                        "【重要ルール】\n" +
                                        "1. 最初に必ず『【Tiếng Việt (Tiếng Việt)】』という見出しを付け、ベトナム語で「認識した言葉」「アクセント・プロソディの評価」「具体的なアドバイス」を１０００字程度で親切に書いてください。\n" +
                                        "2. その次に必ず『【日本語】』という見出しを付け、全く同じ内容の評価とアドバイスを日本語で書いてください。\n\n" +
                                        "ベトナム語のアドバイスは、ベトナム人の初級日本語学習者が直感的に理解できるよう、優しく具体的で専門的すぎないアドバイスを心がけてください。" },
@@ -369,6 +398,5 @@
         canvasContainer.scrollLeft = canvasContainer.scrollWidth;
     }
 </script>
-
 </body>
 </html>

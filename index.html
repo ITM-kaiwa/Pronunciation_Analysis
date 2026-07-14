@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>発音分析アドバイザー - 安定版v4.2a</title>
+    <title>発音分析アドバイザー - 安定版v4.2c</title>
     <style>
         body { font-family: sans-serif; text-align: center; margin-top: 20px; background: #f0f2f5; color: #333; }
         .container { background: white; padding: 20px; border-radius: 10px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 90%; max-width: 600px; text-align: left; }
@@ -13,14 +13,33 @@
         /* 1. ベースのボタンに滑らかな動き（transition）と立体感（box-shadow）を追加 */
         button { 
             font-size: 16px; 
-            padding: 10px 20px; 
-            margin: 10px 5px; 
+            padding: 12px 20px; 
             border: none; 
-            border-radius: 5px; 
+            border-radius: 8px; 
             cursor: pointer; 
             font-weight: bold; 
             transition: all 0.2s ease; /* 色や動きの変化を0.2秒かけて滑らかにする */
             box-shadow: 0 4px 0 rgba(0,0,0,0.2); /* 下方向に影をつけて立体感を出す */
+        }
+        
+        /* ★追加：ボタンを縦に並べるためのコンテナスタイル */
+        .btn-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px; /* ボタンの縦のすき間 */
+            margin: 15px 0;
+        }
+        /* 縦並びの時はボタンの横幅を揃えるときれいに見えます */
+        .btn-container button {
+            width: 100%;
+            max-width: 320px;
+            margin: 0; 
+        }
+
+        /* ★追加：ボタンを隠すためのスタイル */
+        .hidden {
+            display: none !important;
         }
         
         #recordBtn { background-color: #007bff; color: white; }
@@ -79,12 +98,15 @@
             color: white;
             padding: 10px 20px;
             text-decoration: none;
-            border-radius: 5px;
+            border-radius: 8px;
             font-weight: bold;
             margin-top: 10px;
             font-size: 14px;
             transition: all 0.2s ease;
             box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 320px;
+            box-sizing: border-box;
         }
         .ojad-link-btn:hover {
             background-color: #5a6268;
@@ -97,24 +119,23 @@
 </head>
 <body>
 <div class="container">
-    <h2>🗣️ AI発音分析アドバイザー（お試し版）</h2>
+    <h2>🗣️ AI発音分析アドバイザー（お試し版）Ver4.2c</h2>
     
     <div class="key-input-box">
         <label for="apiKey">🔑 <strong>手順1: Gemini APIキーを入力してください</strong></label><br>
         <input type="password" id="apiKey" placeholder="AIzaSy... から始まるキーをもらって、ここに貼り付け">
     </div>
 
-    <p><strong>手順2: ボタンを押して、日本語を話してください。</strong></p>
-    <div>
-    </div>
+    <p class="center"><strong>手順2: ボタンを押して、日本語を話してください。</strong></p>
     
-    <div class="center">
+    <!-- ★修正：ボタンを縦に並べるためのクラスに変更 -->
+    <div class="btn-container">
         <button id="recordBtn">🔵 録音＆可視化 スタート</button>
         <button id="analyzeBtn" disabled>🤖 Geminiで発音を分析</button>
     </div>
     
     <div class="center">
-        <a href="https://www.gavo.t.u-tokyo.ac.jp/ojad/vie/phrasing/index" target="_blank" class="ojad-link-btn">📖 OJADでアクセントの見本を確認する</a>
+        <a href="https://www.gavo.t.u-tokyo.ac.jp/ojad/vie/phrasing/index" target="_blank" class="ojad-link-btn">📖 OJADでアクセント見本を確認する</a>
     </div>
 
     <div id="canvasContainer">
@@ -156,13 +177,11 @@
     // ==========================================
     // 1. APIキーの保存・読み込み処理
     // ==========================================
-    // ページ読み込み時に保存されたAPIキーを復元
     const savedKey = localStorage.getItem('geminiApiKey');
     if (savedKey) {
         apiKeyInput.value = savedKey;
     }
 
-    // キーが入力・変更されるたびに自動保存
     apiKeyInput.addEventListener('input', () => {
         localStorage.setItem('geminiApiKey', apiKeyInput.value.trim());
     });
@@ -174,7 +193,6 @@
     async function runAnalysis(base64Audio, targetText = "") {
         const apiKey = apiKeyInput.value.trim();
         
-        // APIキーがない場合は処理を中断し、ユーザーに入力を促す
         if (!apiKey) {
             alert("🔑 APIキーが入力されていません。\nキーを入力してから「Geminiで発音を分析」ボタンを押してください。");
             window.pendingAnalysisData = { base64Audio, targetText };
@@ -186,7 +204,6 @@
         analyzeBtn.disabled = true;
         recordBtn.disabled = true;
 
-        // 受け取ったテキスト情報があれば、プロンプトに組み込んで精度を上げる
         let promptText = "あなたは日本語音声指導コンサルタントです。添付されたユーザーの録音音声を直接聴き、日本語の高低アクセント（ピッチアクセント）やリズム、イントネーションの美しさを分析してください。\n";
         if (targetText) {
             promptText += `ユーザーは「${targetText}」という文章を発音しようとしています。これを踏まえて、以下のフォーマットに厳密に従って出力してください。\n\n`;
@@ -195,9 +212,9 @@
         }
         
         promptText += "【重要ルール】\n" +
-                      "1. 最初に必ず『【Tiếng Việt (Tiếng Việt)】』という見出しを付け、ベトナム語で「認識した言葉」「アクセント・プロソディの評価」「具体的なアドバイス」を500字程度で初心者に親切でわかりやすく書いてください。\n" +
+                      "1. 最初に必ず『【Tiếng Việt (Tiếng Việt)】』という見出しを付け、ベトナム語で「認識した言葉」「アクセント・プロソディの評価」「具体的なアドバイス」を300から400字程度で初心者に親切でわかりやすく書いてください。\n" +
                       "2. その次に必ず『【日本語】』という見出しを付け、全く同じ内容の評価とアドバイスを日本語で書いてください。\n\n" +
-                      "ベトナム語のアドバイスは、ベトナム人の初級日本語学習者が直感的に理解できるよう、優しくできるだけ具体的で「専門的すぎない」アドバイスを心がけてください。";
+                      "ベトナム語のアドバイスは、ベトナム人の初級日本語学習者が必ず理解できるよう、優しくできるだけ基礎的で「専門的すぎない」アドバイスを心がけてください。";
 
         try {
             const requestBody = {
@@ -243,7 +260,9 @@
         if (targetText && audioDataBase64) {
             console.log("別アプリからデータを受け取りました。解析対象:", targetText);
             
-            // "data:audio/webm;base64,..." のような形式から、純粋なBase64文字列だけを抽出
+            // ★追加：データを受け取った場合は録音ボタンを非表示にする
+            recordBtn.classList.add('hidden');
+            
             const base64Data = audioDataBase64.includes(',') ? audioDataBase64.split(',')[1] : audioDataBase64;
 
             // 受け取ったデータを使って自動で解析処理を開始
@@ -254,6 +273,7 @@
             sessionStorage.removeItem('analysisAudioData');
         } else {
             console.log("外部からの録音データはありません。待機します。");
+            // データがない場合は録音ボタンは表示されたままになる
         }
     });
 
@@ -262,14 +282,12 @@
     // 4. 分析ボタンの手動クリック処理
     // ==========================================
     analyzeBtn.addEventListener('click', async () => {
-        // APIキー入力待ちで保留されていた外部データがある場合
         if (window.pendingAnalysisData) {
             runAnalysis(window.pendingAnalysisData.base64Audio, window.pendingAnalysisData.targetText);
-            window.pendingAnalysisData = null; // 実行後にクリア
+            window.pendingAnalysisData = null; 
             return;
         }
 
-        // ページ上で独自に録音した場合の処理
         if (!audioBlob) {
             alert("録音データがありません。先に録音を行ってください。");
             return;
@@ -279,7 +297,7 @@
         reader.readAsDataURL(audioBlob);
         reader.onloadend = () => {
             const base64Audio = reader.result.split(',')[1];
-            runAnalysis(base64Audio, ""); // 直接録音の場合はテキスト指定なし
+            runAnalysis(base64Audio, ""); 
         };
     });
 
@@ -308,7 +326,6 @@
                     cancelAnimationFrame(animationFrameId);
                 }
                 
-                // マイクの電源を確実に切り、赤いマークを消す
                 if (activeStream) {
                     activeStream.getTracks().forEach(track => track.stop());
                     activeStream = null;
@@ -342,7 +359,6 @@
             microphone = audioContext.createMediaStreamSource(stream);
             microphone.connect(analyser);
 
-            // 録音開始時にキャンバスの幅を初期値(550px)にリセット
             canvas.width = 550;
             canvasCtx.fillStyle = '#111';
             canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
@@ -397,7 +413,6 @@
     }
 
     function drawLine(pitch) {
-        // 右端に近づいたら、キャンバスの幅を右に広げる
         if (xIdx >= canvas.width - 10) { 
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = canvas.width;
@@ -436,9 +451,10 @@
         }
         xIdx += 3;
 
-        // 描画が進むのに合わせて自動的に右へスクロール
         canvasContainer.scrollLeft = canvasContainer.scrollWidth;
     }
 </script>
 </body>
 </html>
+
+```

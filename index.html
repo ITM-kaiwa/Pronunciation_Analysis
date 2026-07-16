@@ -3,140 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>発音分析アドバイザー - 安定版v4.3b</title>
+    <link rel="icon" type="image/png" href="./favicon.png">
+    <title>発音分析アドバイザー - 一般学生向け連携版</title>
+    
+    <!-- 既存アプリと同じTailwind CSSを読み込み -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    
     <style>
-        body { font-family: sans-serif; text-align: center; margin-top: 20px; background: #f0f2f5; color: #333; }
-        .container { background: white; padding: 20px; border-radius: 10px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 90%; max-width: 600px; text-align: left; }
-        h2 { text-align: center; margin-top: 0; }
-        .center { text-align: center; }
-        
-        button { 
-            font-size: 16px; 
-            padding: 12px 20px; 
-            border: none; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            font-weight: bold; 
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+        /* スムーススクロール */
+        html {
+            scroll-behavior: smooth;
         }
-        
-        .btn-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px; 
-            margin: 15px 0;
+        /* キャンバス用コンテナのスクロールバーを少し見やすく */
+        #canvasContainer::-webkit-scrollbar {
+            height: 10px;
         }
-        .btn-container button {
-            width: 100%;
-            max-width: 320px;
-            margin: 0; 
-        }
-
-        .hidden {
-            display: none !important;
-        }
-        
-        #recordBtn { background-color: #007bff; color: white; }
-        #recordBtn.recording { background-color: #333; }
-        #analyzeBtn { background-color: #28a745; color: white; }
-        
-        #recordBtn:hover:not(:disabled) {
-            background-color: #0056b3; 
-        }
-        #analyzeBtn:hover:not(:disabled) {
-            background-color: #218838; 
-        }
-        
-        button:active:not(:disabled) {
-            transform: translateY(4px); 
-            box-shadow: 0 0 0 rgba(0,0,0,0); 
-        }
-        
-        #analyzeBtn:disabled { 
-            background-color: #ccc; 
-            cursor: not-allowed; 
-            box-shadow: none; 
-            transform: none;  
-        }
-        
-        #canvasContainer { 
-            width: 100%; 
-            max-width: 550px; 
-            overflow-x: auto; 
-            margin: 15px auto; 
-            border-radius: 5px; 
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
-            background: #111;
-        }
-        #canvas { 
-            display: block; 
-            background: #111; 
-        }
-        
-        .key-input-box { background: #fff3cd; padding: 15px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #ffeeba; }
-        #apiKey { width: 80%; padding: 8px; font-size: 14px; margin-top: 5px; }
-        #result { background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 5px solid #28a745; margin-top: 20px; white-space: pre-wrap; min-height: 50px; font-size: 15px; line-height: 1.6; }
-        .loading { color: #666; font-style: italic; animation: blink 1s infinite; }
-        .legend { display: flex; justify-content: center; gap: 15px; font-size: 14px; margin-top: 10px; }
-        .color-box { display: inline-block; width: 12px; height: 12px; border-radius: 2px; margin-right: 5px; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        
-        .ojad-link-btn {
-            display: inline-block;
-            background-color: #6c757d;
-            color: white;
-            padding: 10px 20px;
-            text-decoration: none;
+        #canvasContainer::-webkit-scrollbar-track {
+            background: #1e293b; 
             border-radius: 8px;
-            font-weight: bold;
-            margin-top: 10px;
-            font-size: 14px;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
-            width: 100%;
-            max-width: 320px;
-            box-sizing: border-box;
         }
-        .ojad-link-btn:hover {
-            background-color: #5a6268;
-        }
-        .ojad-link-btn:active {
-            transform: translateY(4px);
-            box-shadow: 0 0 0 rgba(0,0,0,0);
+        #canvasContainer::-webkit-scrollbar-thumb {
+            background: #475569; 
+            border-radius: 8px;
         }
     </style>
 </head>
-<body>
-<div class="container">
-    <h2>🗣️ AI発音分析アドバイザー（お試し版）</h2>
+<body class="bg-slate-50 text-slate-800 min-h-screen p-4 md:p-8 font-sans">
     
-    <div class="key-input-box">
-        <label for="apiKey">🔑 <strong>手順1: Gemini APIキーを入力してください</strong></label><br>
-        <input type="password" id="apiKey" placeholder="AIzaSy... から始まるキーをもらって、ここに貼り付け">
-    </div>
+    <div class="max-w-2xl mx-auto space-y-6">
+        
+        <!-- メインカード -->
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+            
+            <h2 class="text-xl md:text-2xl font-bold text-slate-800 border-b border-slate-100 pb-4 text-center">
+                🗣️ AI発音分析アドバイザー <span class="text-sm font-normal text-slate-500">v4.5a</span>
+            </h2>
+            
+            <!-- 手順1: APIキー入力 -->
+            <div class="bg-amber-50 p-4 md:p-5 rounded-xl border border-amber-200 space-y-2">
+                <label for="apiKey" class="block text-sm md:text-base font-bold text-amber-900">
+                    🔑 手順1: Gemini APIキーを入力
+                </label>
+                <input type="password" id="apiKey" class="w-full bg-white border border-amber-300 rounded-lg px-4 py-2.5 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-orange-500 transition shadow-inner" placeholder="AIzaSy... から始まるキーを貼り付け">
+            </div>
 
-    <p class="center" id="step2Text"><strong>手順2: ボタンを押して、日本語を話してください。</strong></p>
-    
-    <div class="btn-container" id="btnContainer">
-        <button id="recordBtn">🔵 録音＆可視化 スタート</button>
-        <button id="analyzeBtn" disabled>🤖 Geminiで発音を分析</button>
-    </div>
-    
-    <div class="center" id="ojadLinkContainer">
-        <a href="https://www.gavo.t.u-tokyo.ac.jp/ojad/vie/phrasing/index" target="_blank" class="ojad-link-btn">📖 OJADでアクセント見本を確認する</a>
-    </div>
+            <!-- 手順2: 録音と分析 -->
+            <div id="step2Text" class="text-center font-bold text-slate-700 pt-2">
+                手順2: ボタンを押して、日本語を話してください。
+            </div>
+            
+            <div id="btnContainer" class="flex flex-col gap-3 max-w-sm mx-auto w-full">
+                <button id="recordBtn" class="w-full bg-red-50 text-red-600 border border-red-200 py-3.5 rounded-xl text-sm md:text-base font-bold hover:bg-red-100 transition shadow-sm active:scale-95 flex justify-center items-center gap-2">
+                    🔴 録音＆可視化 スタート
+                </button>
+                
+                <button id="analyzeBtn" class="w-full bg-emerald-500 text-white border border-emerald-600 py-3.5 rounded-xl text-sm md:text-base font-bold hover:bg-emerald-600 transition shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2" disabled>
+                    🤖 Geminiで発音を分析
+                </button>
+            </div>
+            
+            <div id="ojadLinkContainer" class="text-center">
+                <a href="https://www.gavo.t.u-tokyo.ac.jp/ojad/vie/phrasing/index" target="_blank" class="inline-block w-full max-w-sm bg-slate-600 text-white py-3 rounded-xl text-sm font-bold hover:bg-slate-700 transition shadow-sm active:scale-95 text-center">
+                    📖 OJADでアクセント見本を確認する
+                </a>
+            </div>
 
-    <div id="canvasContainer">
-        <canvas id="canvas" width="550" height="200"></canvas>
-    </div>
-    
-    <!-- ★修正：スクロールのターゲットになるようにIDを付与 -->
-    <h3 id="resultHeading">🤖 AIの分析フィードバック (Kết quả phân tích):</h3>
-    <div id="result">ここにGeminiからのアドバイスが表示されます。</div>
+            <!-- キャンバス（波形描画） -->
+            <div id="canvasContainer" class="w-full overflow-x-auto rounded-xl border-4 border-slate-800 bg-slate-900 shadow-inner scroll-smooth">
+                <canvas id="canvas" height="200" class="block"></canvas>
+            </div>
+            
+            <!-- 分析結果 -->
+            <div class="space-y-3 pt-2">
+                <h3 id="resultHeading" class="text-lg md:text-xl font-bold text-slate-800 border-b border-slate-100 pb-2 flex flex-col md:flex-row md:items-baseline gap-1">
+                    🤖 AIの分析フィードバック
+                    <span class="text-sm font-normal text-slate-500">(Kết quả phân tích)</span>
+                </h3>
+                <div id="result" class="bg-slate-50 p-4 md:p-6 rounded-xl border border-slate-200 whitespace-pre-wrap text-sm md:text-base text-slate-700 leading-relaxed min-h-[120px] shadow-inner">ここにGeminiからのアドバイスが表示されます。</div>
+            </div>
 
-</div>
+        </div>
+        
+        <div class="w-full text-center text-slate-500 pb-4">
+            <p class="text-xs">&copy; 2026 ITM Group, All rights reserved.</p>
+        </div>
+    </div>
 
 <script>
     const recordBtn = document.getElementById('recordBtn');
@@ -198,7 +149,8 @@
             return;
         }
 
-        resultDiv.innerHTML = '<span class="loading">⏳ Gemini đang lắng nghe và phân tích giọng nói của bạn...<br>(AIが音声を解析中です。数秒お待ちください...)</span>';
+        // ローディング表示（Tailwindのアニメーションを使用）
+        resultDiv.innerHTML = '<div class="flex flex-col items-center justify-center space-y-2 text-orange-600 animate-pulse font-bold py-6"><span class="text-2xl">⏳</span><span>Gemini đang lắng nghe và phân tích...</span><span class="text-sm font-normal text-slate-500">(AIが音声を解析中です。数秒お待ちください...)</span></div>';
         analyzeBtn.disabled = true; 
         recordBtn.disabled = true;
 
@@ -212,7 +164,7 @@
         promptText += "【重要ルール】\n" +
                       "1. 最初に必ず『【Tiếng Việt (Tiếng Việt)】』という見出しを付け、ベトナム語で「認識した言葉」「アクセント・プロソディの評価」「具体的なアドバイス」を300から400字程度で初心者に親切でわかりやすく書いてください。\n" +
                       "2. その次に必ず『【日本語】』という見出しを付け、全く同じ内容の評価とアドバイスを日本語で書いてください。\n\n" +
-                      "ベトナム語のアドバイスは、ベトナム人の初級日本語学習者が必ず理解できるよう、優しくできるだけ基礎的で「専門的すぎない」アドバイスを心がけてください。";
+                      "ベトナム語のアドバイスは、ベトナム人の初級日本語学習者が必ず理解できるよう、優しく、そして、できるだけ基礎的でおおまかに、「専門的すぎない」アドバイスを心がけてください。";
 
         try {
             const requestBody = {
@@ -252,8 +204,7 @@
             recordBtn.classList.remove('hidden');
             step2Text.classList.remove('hidden');
 
-            // ★追加：アドバイス部分（見出し）へ自動スクロールする処理
-            // UIが表示されてレイアウトが確定するのを少し（0.1秒）待ってからスクロールさせます
+            // アドバイス部分（見出し）へ自動スクロール
             setTimeout(() => {
                 const heading = document.getElementById('resultHeading');
                 if (heading) {
@@ -326,10 +277,13 @@
                 await audioContext.resume();
             }
 
+            // 【録音停止処理】
             if (isRecording) {
                 isRecording = false;
-                recordBtn.textContent = "🔵 録音＆可視化 スタート";
-                recordBtn.classList.remove('recording');
+                
+                // ボタンのデザインを元に戻す (Tailwindクラス切り替え)
+                recordBtn.innerHTML = "🔴 録音＆可視化 スタート";
+                recordBtn.className = "w-full bg-red-50 text-red-600 border border-red-200 py-3.5 rounded-xl text-sm md:text-base font-bold hover:bg-red-100 transition shadow-sm active:scale-95 flex justify-center items-center gap-2";
                 
                 if (mediaRecorder && mediaRecorder.state !== "inactive") {
                     mediaRecorder.stop();
@@ -342,9 +296,16 @@
                     activeStream.getTracks().forEach(track => track.stop());
                     activeStream = null;
                 }
+                
+                // ★追加：キャンバスを最初の位置（一番左）にスクロールして戻す
+                setTimeout(() => {
+                    canvasContainer.scrollLeft = 0;
+                }, 100);
+                
                 return;
             }
 
+            // 【録音開始処理】
             audioChunks = [];
             resultDiv.textContent = "ここにGeminiからのアドバイスが表示されます。";
             
@@ -352,8 +313,11 @@
             activeStream = stream;
             
             isRecording = true;
-            recordBtn.textContent = "⏹️ 録音を停止";
-            recordBtn.classList.add('recording');
+            
+            // ボタンを録音中デザインに変更 (Tailwindクラス切り替え)
+            recordBtn.innerHTML = "⏹️ 録音を停止 (Đang ghi...)";
+            recordBtn.className = "w-full bg-red-600 text-white border border-red-700 py-3.5 rounded-xl text-sm md:text-base font-bold transition shadow-md active:scale-95 flex justify-center items-center gap-2 animate-pulse";
+            
             analyzeBtn.disabled = true;
 
             mediaRecorder = new MediaRecorder(stream);
@@ -371,8 +335,9 @@
             microphone = audioContext.createMediaStreamSource(stream);
             microphone.connect(analyser);
 
+            // キャンバスの初期化
             canvas.width = 550;
-            canvasCtx.fillStyle = '#111';
+            canvasCtx.fillStyle = '#0f172a'; // Tailwindのslate-900に近い色
             canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
             xIdx = 0;
             lastY = null;
@@ -433,7 +398,7 @@
             tempCtx.drawImage(canvas, 0, 0);
 
             canvas.width += 500;
-            canvasCtx.fillStyle = '#111';
+            canvasCtx.fillStyle = '#0f172a';
             canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
             canvasCtx.drawImage(tempCanvas, 0, 0);
         }
@@ -446,7 +411,8 @@
                 canvasCtx.moveTo(xIdx, y);
             } else {
                 canvasCtx.lineTo(xIdx, y);
-                canvasCtx.strokeStyle = '#00ffcc'; 
+                // Tailwindのorange-400やemerald-400に近い色へ変更
+                canvasCtx.strokeStyle = '#34d399'; 
                 canvasCtx.lineWidth = 4;
                 canvasCtx.lineCap = 'round';
                 canvasCtx.lineJoin = 'round'; 
@@ -457,7 +423,7 @@
             }
             lastY = y;
         } else {
-            canvasCtx.fillStyle = '#444';
+            canvasCtx.fillStyle = '#334155'; // Tailwind slate-700
             canvasCtx.fillRect(xIdx, canvas.height / 2, 2, 2);
             lastY = null; 
         }

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>リアルタイム ピッチ可視化</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; margin-top: 50px; }
+        canvas { border: 1px solid #ccc; background-color: #f9f9f9; width: 800px; height: 300px; }
+        button { font-size: 1.2rem; padding: 10px 20px; cursor: pointer; }
+        #pitchValue { font-size: 1.5rem; margin-top: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <button id="startButton">マイクを有効にする</button>
+    <div id="pitchValue">-- Hz</div>
+    <canvas id="pitchCanvas" width="800" height="300"></canvas>
+
+    <script>
+        const startButton = document.getElementById('startButton');
+        const pitchValueDisplay = document.getElementById('pitchValue');
+        const canvas = document.getElementById('pitchCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let audioContext;
+        let analyser;
+        let microphone;
+        let isRunning = false;
+        
+        // 描画用の履歴データ
+        const pitchHistory = new Array(canvas.width).fill(null);
+
+        // 1. マイクの起動とAudioContextの初期化
+        startButton.addEventListener('click', async () => {
+            if (isRunning) return;
+
+            try {
+                // マイクへのアクセス要求
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 2048; // 波形データを取得するバッファサイズ
+                
+                microphone = audioContext.createMediaStreamSource(stream);
+                microphone.connect(analyser);
+                
+                isRunning = true;
+                startButton.textContent = "音声取得中...";
+                startButton.disabled = true;
+
+                updatePitch(); // 処理ループの開始
+
+            } catch (err) {
+                alert("マイクへのアクセスが拒否されたか、エラーが発生しました: " + err.message);
+            }
+        });
+
+        // 2. 毎フレーム実行されるメイン処理
+        function updatePitch() {
+            if (!isRunning) return;
+
+            const bufferLength = analyser.fftSize;
+            const buffer = new Float32Array(bufferLength);
+            
+            // 時間領域の波形データを取得
+            analyser.getFloatTimeDomainData(buffer);
+
+            // 自己相関関数でピッチを計算
+            const pitch = autoCorrelate(buffer, audioContext.sampleRate);
+
+            // 履歴の更新 (古いものを捨てて新しいものを追加)
+            pitchHistory.shift();
+            pitchHistory.push(pitch !== -1 ? pitch : null);
+
+            // 画面の更新
+            if (pitch !== -1) {
+                pitchValueDisplay.textContent = Math.round(pitch) + ' Hz';
+            } else {
+                pitchValueDisplay.textContent = '-- Hz';
+            }
+
+            drawPitchGraph();
+
+            // 次のフレームを要求
+            requestAnimationFrame(updatePitch);
+        }
+
+        // 3. 描画処理 (Canvas)
+        function drawPitchGraph() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // グリッドや背景などの描画（省略）
+            
+            ctx.beginPath();
+            ctx.strokeStyle = '#2196F3';
+            ctx.lineWidth = 3;
+
+            // 表示する周波数の範囲 (日本語の話し声に合わせて調整)
+            const minFreq = 50;  // 下限Hz
+            const maxFreq = 400; // 上限Hz
+
+            let started = false;
+
+            for (let i = 0; i < pitchHistory.length; i++) {
+                const pitch = pitchHistory[i];
+                if (pitch !== null) {
+                    // Y座標の計算 (キャンバスの高さに合わせてスケーリング)
+                    // 高い音ほど上に描画するため反転
+                    let y = canvas.height - ((pitch - minFreq) / (maxFreq - minFreq)) * canvas.height;
+                    
+                    // 範囲外の描画を制限
+                    y = Math.max(0, Math.min(canvas.height, y));
+
+                    if (!started) {
+                        ctx.moveTo(i, y);
+                        started = true;
+                    } else {
+                        ctx.lineTo(i, y);
+                    }
+                } else {
+                    started = false; // 音が途切れたら線を切る
+                }
+            }
+            ctx.stroke();
+        }
+
+        // 4. 自己相関アルゴリズム (Autocorrelation)
+        // 波形の周期性を見つけて、基本周波数を特定する関数
+        function autoCorrelate(buf, sampleRate) {
+            // 音量が小さすぎる場合は無音として扱う (ノイズ対策)
+            let rootMeanSquare = 0;
+            for (let i = 0; i < buf.length; i++) {
+                rootMeanSquare += buf[i] * buf[i];
+            }
+            rootMeanSquare = Math.sqrt(rootMeanSquare / buf.length);
+            if (rootMeanSquare < 0.01) return -1; // -1は検出不能の意
+
+            // 以下、自己相関の計算 (簡略化・最適化版)
+            let r1 = 0, r2 = buf.length - 1, thres = 0.2;
+            for (let i = 0; i < buf.length / 2; i++)
+                if (Math.abs(buf[i]) < thres) { r1 = i; break; }
+            for (let i = 1; i < buf.length / 2; i++)
+                if (Math.abs(buf[buf.length - i]) < thres) { r2 = buf.length - i; break; }
+
+            buf = buf.slice(r1, r2);
+            const c = new Array(buf.length).fill(0);
+            for (let i = 0; i < buf.length; i++)
+                for (let j = 0; j < buf.length - i; j++)
+                    c[i] = c[i] + buf[j] * buf[j + i];
+
+            let d = 0; while (c[d] > c[d + 1]) d++;
+            let maxval = -1, maxpos = -1;
+            for (let i = d; i < buf.length; i++) {
+                if (c[i] > maxval) {
+                    maxval = c[i];
+                    maxpos = i;
+                }
+            }
+            let T0 = maxpos;
+            
+            // パラボラ補間で精度を上げる
+            let x1 = c[T0 - 1], x2 = c[T0], x3 = c[T0 + 1];
+            let a = (x1 + x3 - 2 * x2) / 2;
+            let b = (x3 - x1) / 2;
+            if (a) T0 = T0 - b / (2 * a);
+
+            return sampleRate / T0;
+        }
+    </script>
+</body>
+</html>
